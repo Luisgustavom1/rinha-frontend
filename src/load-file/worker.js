@@ -10,8 +10,7 @@ onmessage = function(e) {
       throw new Error('Error on parsing json')
     }
     const r = []
-    // TODO simplify this
-    jsonToArray(Array.isArray(jsonParsed) ? jsonParsed.map((j, i) => [`${i}`, [j]]) : Object.entries(jsonParsed), '', r)
+    jsonToArray(Object.entries(jsonParsed), '', r)
 
     console.log(r)
 
