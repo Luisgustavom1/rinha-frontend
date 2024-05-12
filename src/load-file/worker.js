@@ -31,7 +31,7 @@ function jsonToArray(entries, p, r) {
       continue
     }
 
-    const path = p && p !== k ? `${p}.${k}` : k
+    const path = (p && p !== k) ? `${p}.${k}` : k
     const isArray = Array.isArray(v)
     if (isArray && v.length === 0) {
       r.push({ type: 'ARRAY', name: k, path, empty: true })

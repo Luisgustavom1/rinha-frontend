@@ -26,7 +26,7 @@ worker.onmessage = function(event) {
   jsonFileNameEl.innerHTML = name
 
   if (!jsonEntries.length) return;
-  jsonEntriesToTreeViewer(jsonEntries, jsonTreeViewerEl)
+  jsonEntriesToTreeViewer(jsonEntries, jsonTreeViewerEl, jsonEntries[0].path === "0")
 }
 
 worker.onmessageerror = function() {
@@ -42,19 +42,20 @@ function showErrorMessage() {
   input.setAttribute('aria-invalid', "true")
 }
 
-function jsonEntriesToTreeViewer(entries, parentEl) {
+function jsonEntriesToTreeViewer(entries, treeEl, startWithArray) {
   const details = new Map();
 
   for (const entry of entries) {
-    const { type, name, path, value: v, empty } = entry;
-    const isEnd = type === "END";
+    const { type, name, path, value: v, empty } = entry
+    const pathParsed = path.replace(new RegExp(`.${name}(?!.*.${name})`), '')
+    const parent = details.get(pathParsed)
 
-    const p = path.replace(new RegExp(`.${name}(?!.*.${name})`), '');
-    const parent = details.get(p)
+    const isEnd = type === "END";
     if (isEnd) {
       const { detail } = details.get(path);
-      if (path === p) {
-        parentEl.appendChild(detail)
+      const isFirstLevel = path === pathParsed
+      if (isFirstLevel) {
+        treeEl.appendChild(detail)
       } else {
         parent.detail.appendChild(detail)
       }
@@ -62,15 +63,17 @@ function jsonEntriesToTreeViewer(entries, parentEl) {
     }
     
     const isObj = type === "ARRAY" || type === "OBJECT";
-    const fromArray = parent?.entry.type === "ARRAY";
-    if (isObj) {
+    const fromArray = parent ? parent.entry.type === "ARRAY" : startWithArray;
+    if (isObj && !empty) {
       const detail = createDetail(name, { isArray: type === "ARRAY", fromArray })
       details.set(path, { detail, entry })
       continue
     }
 
     const isNullable = v === null || v === undefined
-    parent.detail.appendChild(createValueLine(name, v, { isNullable, emptyArr: empty, fromArray }))
+    parent.detail.appendChild(
+      createValueLine(name, v, { isNullable: isNullable && !empty, emptyArr: empty, fromArray })
+    )
   }
 }
 
