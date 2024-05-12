@@ -26,7 +26,7 @@ worker.onmessage = function(event) {
   jsonFileNameEl.innerHTML = name
 
   if (!jsonEntries.length) return;
-  jsonEntriesToTreeViewer(jsonEntries, jsonEntries[0][0] === "0", jsonTreeViewerEl)
+  jsonEntriesToTreeViewer(jsonEntries, jsonTreeViewerEl)
 }
 
 worker.onmessageerror = function() {
@@ -42,28 +42,30 @@ function showErrorMessage() {
   input.setAttribute('aria-invalid', "true")
 }
 
-function jsonEntriesToTreeViewer(entries, fromArray, parentEl) {
+function jsonEntriesToTreeViewer(entries, parentEl) {
   const details = new Map();
 
-  for (const { type, name, path, value: v, empty } of entries) {
+  for (const entry of entries) {
+    const { type, name, path, value: v, empty } = entry;
     const isEnd = type === "END";
     if (isEnd) {
-      const detail = details.get(path);
+      const { detail } = details.get(path);
       parentEl.appendChild(detail)
       continue
     }
     
     const isObj = type === "ARRAY" || type === "OBJECT";
+    const p = path.replace(new RegExp(`.${name}(?!.*.${name})`), '');
+    const parent = details.get(p)
+    const fromArray = parent?.entry.name === "0";
     if (isObj) {
       const detail = createDetail(name, { isArray: type === "ARRAY", fromArray })
-      details.set(path, detail)
+      details.set(path, { detail, entry })
       continue
     }
 
-    const p = path.replace(new RegExp(`.${name}(?!.*.${name})`), '');
-    const toAppend = details.get(p);
     const isNullable = v === null || v === undefined
-    toAppend.appendChild(createValueLine(name, v, { isNullable, emptyArr: empty, fromArray }))
+    parent.detail.appendChild(createValueLine(name, v, { isNullable, emptyArr: empty, fromArray }))
   }
 }
 
