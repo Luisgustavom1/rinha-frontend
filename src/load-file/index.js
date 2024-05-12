@@ -72,7 +72,7 @@ function jsonEntriesToTreeViewer(entries, treeEl, startWithArray) {
 
     const isNullable = v === null || v === undefined
     parent.detail.appendChild(
-      createValueLine(name, v, { isNullable: isNullable && !empty, emptyArr: empty, fromArray })
+      createValueLine(name, String(v), { isNullable: isNullable && !empty, emptyArr: empty, fromArray })
     )
   }
 }
