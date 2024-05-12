@@ -62,7 +62,7 @@ function jsonEntriesToTreeViewer(entries, parentEl) {
     }
     
     const isObj = type === "ARRAY" || type === "OBJECT";
-    const fromArray = parent?.entry.name === "0";
+    const fromArray = parent?.entry.type === "ARRAY";
     if (isObj) {
       const detail = createDetail(name, { isArray: type === "ARRAY", fromArray })
       details.set(path, { detail, entry })
