@@ -48,15 +48,20 @@ function jsonEntriesToTreeViewer(entries, parentEl) {
   for (const entry of entries) {
     const { type, name, path, value: v, empty } = entry;
     const isEnd = type === "END";
+
+    const p = path.replace(new RegExp(`.${name}(?!.*.${name})`), '');
+    const parent = details.get(p)
     if (isEnd) {
       const { detail } = details.get(path);
-      parentEl.appendChild(detail)
+      if (path === p) {
+        parentEl.appendChild(detail)
+      } else {
+        parent.detail.appendChild(detail)
+      }
       continue
     }
     
     const isObj = type === "ARRAY" || type === "OBJECT";
-    const p = path.replace(new RegExp(`.${name}(?!.*.${name})`), '');
-    const parent = details.get(p)
     const fromArray = parent?.entry.name === "0";
     if (isObj) {
       const detail = createDetail(name, { isArray: type === "ARRAY", fromArray })

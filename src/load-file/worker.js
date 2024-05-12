@@ -32,15 +32,14 @@ function jsonToArray(entries, p, r) {
       continue
     }
 
-    const path = p && p !== k ? `${p}.${k}` : ''
-    const newPath = p && !path ? k : path
+    const path = p && p !== k ? `${p}.${k}` : k
     const isArray = Array.isArray(v)
     if (isArray && v.length === 0) {
       r.push({ type: 'ARRAY', name: k, path, empty: true })
     } else {
-      r.push({ type: isArray ? "ARRAY" : 'OBJECT', name: k, path: newPath })    
-      jsonToArray(Object.entries(v), path || k, r)
-      r.push({ type: 'END', path: newPath })
+      r.push({ type: isArray ? "ARRAY" : 'OBJECT', name: k, path })    
+      jsonToArray(Object.entries(v), path, r)
+      r.push({ type: 'END', name: k, path })
     }
   }
 }
