@@ -5,6 +5,7 @@ const uploadJsonFileEl = document.querySelector("#upload-file-json")
 const contentEl = document.querySelector('.content')
 const jsonFileNameEl = document.querySelector("#json-file-name")
 const jsonTreeViewerEl = document.querySelector("#json-tree-viewer")
+const jsonTreeViewerScrollEl = document.querySelector(".treeviewer__content--scroll")
 
 const worker = new Worker("src/load-file/worker.js");
 
@@ -26,6 +27,8 @@ worker.onmessage = function(event) {
   jsonFileNameEl.innerHTML = name
 
   if (!jsonEntries.length) return;
+  const effectiveEntries = jsonEntries.filter(({ type, closeBrackets }) => !(type === "END" && closeBrackets))
+  jsonTreeViewerScrollEl.style.height = `${effectiveEntries.length * LINE_HEIGHT}px`
   jsonEntriesToTreeViewer(jsonEntries, jsonTreeViewerEl, jsonEntries[0].path === "0")
 }
 
