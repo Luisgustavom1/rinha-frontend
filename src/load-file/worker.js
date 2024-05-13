@@ -38,7 +38,6 @@ function jsonToArray(entries, p, r) {
     } else {
       r.push({ type: isArray ? "ARRAY" : 'OBJECT', name: k, path })    
       jsonToArray(Object.entries(v), path, r)
-      r.push({ type: 'END', closeBrackets: isArray, name: k, path })
     }
   }
 }

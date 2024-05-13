@@ -1,13 +1,16 @@
 const LINE_HEIGHT = 28
-const EXTRA_LINES = 2
+const MAX_ELEMENTS_PER_VIEWPORT = 60
 
 const uploadJsonFileEl = document.querySelector("#upload-file-json")
 const contentEl = document.querySelector('.content')
 const jsonFileNameEl = document.querySelector("#json-file-name")
 const jsonTreeViewerEl = document.querySelector("#json-tree-viewer")
+const jsonTreeViewerContentEl = document.querySelector(".treeviewer__content")
 const jsonTreeViewerScrollEl = document.querySelector(".treeviewer__content--scroll")
 
 const worker = new Worker("src/load-file/worker.js");
+
+let entries = []
 
 uploadJsonFileEl.addEventListener('change', (e) => {
   const file = e.target.files[0];
@@ -27,14 +30,25 @@ worker.onmessage = function(event) {
   jsonFileNameEl.innerHTML = name
 
   if (!jsonEntries.length) return;
-  const effectiveEntries = jsonEntries.filter(({ type, closeBrackets }) => !(type === "END" && closeBrackets))
-  jsonTreeViewerScrollEl.style.height = `${effectiveEntries.length * LINE_HEIGHT}px`
-  jsonEntriesToTreeViewer(jsonEntries, jsonTreeViewerEl, jsonEntries[0].path === "0")
+  entries = jsonEntries
+  renderEntries()
 }
 
 worker.onmessageerror = function() {
   showErrorMessage()
 }
+
+jsonTreeViewerContentEl.addEventListener("scroll", (ev) => {
+  const percentage = Number((((ev.target.scrollTop + ev.target.clientHeight) / jsonTreeViewerScrollEl.clientHeight) * 100).toFixed(3));
+  const maxElementsPercentage = Number(((MAX_ELEMENTS_PER_VIEWPORT / entries.length) * 100).toFixed(3));
+  const shouldGetMore = (percentage % maxElementsPercentage) === 0
+  if (shouldGetMore) {
+    const viewportQuantity = Math.floor(maxElementsPercentage / percentage)
+    const start = viewportQuantity * MAX_ELEMENTS_PER_VIEWPORT
+    const end = start + MAX_ELEMENTS_PER_VIEWPORT
+    loadEntries(start, end)
+  }
+})
 
 function showErrorMessage() {
   const filefield = document.querySelector('.filefield')
@@ -45,6 +59,15 @@ function showErrorMessage() {
   input.setAttribute('aria-invalid', "true")
 }
 
+function renderEntries() {
+  jsonTreeViewerScrollEl.style.height = `${entries.length * LINE_HEIGHT}px`
+  loadEntries(0, MAX_ELEMENTS_PER_VIEWPORT)
+}
+
+function loadEntries(start, end) {
+  jsonEntriesToTreeViewer(entries.slice(start, end), jsonTreeViewerEl, entries[0].path === "0")
+}
+
 function jsonEntriesToTreeViewer(entries, treeEl, startWithArray) {
   const details = new Map();
 
@@ -53,23 +76,19 @@ function jsonEntriesToTreeViewer(entries, treeEl, startWithArray) {
     const pathParsed = path.replace(new RegExp(`.${name}(?!.*.${name})`), '')
     const parent = details.get(pathParsed)
 
-    const isEnd = type === "END";
-    if (isEnd) {
-      const { detail } = details.get(path);
+    const isObj = type === "ARRAY" || type === "OBJECT";
+    const fromArray = parent ? parent.entry.type === "ARRAY" : startWithArray;
+    if (isObj && !empty) {
+      const detail = createDetail(name, { isArray: type === "ARRAY", fromArray })
+      details.set(path, { detail, entry })
+
       const isFirstLevel = path === pathParsed
       if (isFirstLevel) {
         treeEl.appendChild(detail)
       } else {
         parent.detail.appendChild(detail)
       }
-      continue
-    }
-    
-    const isObj = type === "ARRAY" || type === "OBJECT";
-    const fromArray = parent ? parent.entry.type === "ARRAY" : startWithArray;
-    if (isObj && !empty) {
-      const detail = createDetail(name, { isArray: type === "ARRAY", fromArray })
-      details.set(path, { detail, entry })
+
       continue
     }
 
